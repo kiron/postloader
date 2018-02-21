@@ -22,5 +22,5 @@ export default (tableName: string, columns: $ReadOnlyArray<ColumnType>): boolean
     return false;
   }
 
-  return firstIdColumnNames.join('_') === tableName;
+  return firstIdColumnNames.join('__') === tableName;
 };
