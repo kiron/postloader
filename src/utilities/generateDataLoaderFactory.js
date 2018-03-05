@@ -175,6 +175,10 @@ export default (
       throw new Error('Unexpected state.');
     }
 
+    if (!tableNames.includes(firstIdColumnNames[0]) || !tableNames.includes(firstIdColumnNames[1])) {
+      continue;
+    }
+
     const relations = [
       {
         key: firstIdColumnNames[0],
