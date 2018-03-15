@@ -26,7 +26,7 @@ export default async (connection: DatabaseConnectionType): Promise<$ReadOnlyArra
     LEFT JOIN pg_description pd1 ON pd1.objoid = pa1.attrelid AND pd1.objsubid = pa1.attnum
     WHERE
       pn1.nspname = 'public' AND
-      pc1.relkind IN ('r', 'm')
+      pc1.relkind IN ('r', 'm','v')
     ORDER BY
       pc1.relname ASC,
       pa1.attnum ASC
