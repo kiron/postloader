@@ -17,6 +17,10 @@ export default (databaseTypeName: string): string => {
     return 'boolean';
   }
 
+  if (databaseTypeName === 'timestamp without time zone' || databaseTypeName === 'date') {
+    return 'Date';
+  }
+
   if (isStringType(databaseTypeName)) {
     return 'string';
   }
