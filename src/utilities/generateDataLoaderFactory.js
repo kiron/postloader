@@ -1,18 +1,9 @@
 // @flow
 
 import pluralize from 'pluralize';
-import {
-  camelCase,
-  upperFirst
-} from 'lodash';
-import type {
-  ColumnType,
-  DataTypeMapType,
-  IndexType
-} from '../types';
-import {
-  UnexpectedStateError
-} from '../errors';
+import {camelCase, upperFirst} from 'lodash';
+import type {ColumnType, DataTypeMapType, IndexType} from '../types';
+import {UnexpectedStateError} from '../errors';
 import Logger from '../Logger';
 import generateFlowTypeDocument from './generateFlowTypeDocument';
 import indent from './indent';
@@ -45,18 +36,13 @@ const createLoaderByIdsUsingJoiningTableDeclaration = (
 };
 
 // eslint-disable-next-line complexity
-export default (
-  unnormalisedColumns: $ReadOnlyArray<ColumnType>,
-  indexes: $ReadOnlyArray<IndexType>,
-  dataTypeMap: DataTypeMapType,
-): string => {
-  const columns = unnormalisedColumns
-    .map((column) => {
-      return {
-        ...column,
-        mappedTableName: column.mappedTableName || column.tableName
-      };
-    });
+export default (unnormalisedColumns: $ReadOnlyArray<ColumnType>, indexes: $ReadOnlyArray<IndexType>, dataTypeMap: DataTypeMapType): string => {
+  const columns = unnormalisedColumns.map((column) => {
+    return {
+      ...column,
+      mappedTableName: column.mappedTableName || column.tableName
+    };
+  });
 
   if (columns.length === 0) {
     throw new UnexpectedStateError('Must know multiple columns.');
@@ -87,27 +73,6 @@ export default (
 
     const resouceName = upperFirst(camelCase(mappedTableName));
 
-    for (const tableColumn of tableColumns) {
-      const tableColumnSelector = createColumnSelector(tableColumns);
-
-      if (tableColumn.name.endsWith('_id')) {
-        const loaderName = pluralize(resouceName) + 'By' + upperFirst(camelCase(tableColumn.name)) + 'Loader';
-
-        loaders.push(createLoaderByIdsDeclaration(loaderName, tableName, tableColumn.name, tableColumnSelector, true));
-
-        const loaderType = createLoaderTypePropertyDeclaration(
-          loaderName,
-          dataTypeMap[tableColumn.dataType] ? dataTypeMap[tableColumn.dataType] : tableColumn.dataType,
-          tableColumn.mappedTableName,
-          true
-        );
-
-        loaderTypes.push(loaderType);
-
-        loaderNames.push(loaderName);
-      }
-    }
-
     const tableUniqueIndexes = indexes.filter((index) => {
       return index.tableName === tableName && index.indexIsUnique === true && index.columnNames.length === 1;
     });
@@ -131,6 +96,13 @@ export default (
 
       const loaderName = resouceName + 'By' + upperFirst(camelCase(indexColumn.name)) + 'Loader';
 
+      // sometimes a table could have a column which is a foreign key and at the same time has an index
+      // in this case we only need one loader for it, therefore the current set of loaders are checked
+      // and if there is not yet one, then one is created for it, otherwise it is skipped.
+      if (loaderNames.includes(loaderName)) {
+        continue;
+      }
+
       loaders.push(createLoaderByIdsDeclaration(loaderName, tableName, indexColumn.name, tableColumnSelector, false));
 
       const loaderType = createLoaderTypePropertyDeclaration(
@@ -143,6 +115,33 @@ export default (
       loaderTypes.push(loaderType);
 
       loaderNames.push(loaderName);
+    }
+
+    for (const tableColumn of tableColumns) {
+      const tableColumnSelector = createColumnSelector(tableColumns);
+
+      if (tableColumn.name.endsWith('_id')) {
+        const loaderName = pluralize(resouceName) + 'By' + upperFirst(camelCase(tableColumn.name)) + 'Loader';
+
+        // check the current set of loaders and if there is not yet one,
+        // then one is created for it, otherwise it is skipped.
+        if (loaderNames.includes(loaderName)) {
+          continue;
+        }
+
+        loaders.push(createLoaderByIdsDeclaration(loaderName, tableName, tableColumn.name, tableColumnSelector, true));
+
+        const loaderType = createLoaderTypePropertyDeclaration(
+          loaderName,
+          dataTypeMap[tableColumn.dataType] ? dataTypeMap[tableColumn.dataType] : tableColumn.dataType,
+          tableColumn.mappedTableName,
+          true
+        );
+
+        loaderTypes.push(loaderType);
+
+        loaderNames.push(loaderName);
+      }
     }
   }
 
@@ -202,9 +201,12 @@ export default (
       });
 
       if (!resourceTableColumns.length) {
-        log.warn({
-          relation
-        }, 'resource without columns');
+        log.warn(
+          {
+            relation
+          },
+          'resource without columns'
+        );
 
         continue;
       }
@@ -213,7 +215,9 @@ export default (
 
       const tableColumnSelector = createColumnSelector(resourceTableColumns, 'r2');
 
-      loaders.push(createLoaderByIdsUsingJoiningTableDeclaration(loaderName, tableName, realResourceTableName, relation.resource, relation.key, tableColumnSelector));
+      loaders.push(
+        createLoaderByIdsUsingJoiningTableDeclaration(loaderName, tableName, realResourceTableName, relation.resource, relation.key, tableColumnSelector)
+      );
 
       const keyColumn = tableColumns.find((column) => {
         return column.name === relation.key + '_id';
@@ -257,9 +261,12 @@ import type {
 ${generateFlowTypeDocument(columns, dataTypeMap)}
 
 export type LoadersType = {|
-${loaderTypes.map((body) => {
-    return indent(body, 2);
-  }).sort().join(',\n')}
+${loaderTypes
+    .map((body) => {
+      return indent(body, 2);
+    })
+    .sort()
+    .join(',\n')}
 |};
 
 export const createLoaders = (connection: DatabaseConnectionType, dataLoaderConfigurationMap: Object = {}): LoadersType => {
