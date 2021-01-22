@@ -9,16 +9,16 @@ const log = Logger.child({
 });
 
 export default (databaseTypeName: string): string => {
-  if (databaseTypeName === 'json') {
-    return 'Object';
+  if (databaseTypeName === 'json' || databaseTypeName === 'jsonb') {
+    return '{ [key: string]: any }';
   }
 
   if (databaseTypeName === 'boolean') {
     return 'boolean';
   }
 
-  if (databaseTypeName === 'timestamp without time zone' || databaseTypeName === 'date') {
-    return 'Date';
+  if (databaseTypeName === 'date') {
+    return 'string';
   }
 
   if (isStringType(databaseTypeName)) {
@@ -29,9 +29,6 @@ export default (databaseTypeName: string): string => {
     return 'number';
   }
 
-  if (databaseTypeName === 'json' || databaseTypeName === 'jsonb') {
-    return 'Object';
-  }
 
   log.warn({
     databaseTypeName

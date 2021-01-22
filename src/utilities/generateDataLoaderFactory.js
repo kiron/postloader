@@ -17,7 +17,7 @@ const log = Logger.child({
 });
 
 const createLoaderByIdsDeclaration = (loaderName: string, tableName: string, keyColumnName, columnSelector: string, resultIsArray: boolean) => {
-  return `const ${loaderName} = new DataLoader((ids) => {
+  return `const ${loaderName} = new DataLoader<any, any>((ids) => {
   return getByIds(connection, '${tableName}', ids, '${keyColumnName}', '${columnSelector}', ${String(resultIsArray)});
 }, dataLoaderConfigurationMap.${loaderName});`;
 };
@@ -30,7 +30,7 @@ const createLoaderByIdsUsingJoiningTableDeclaration = (
   lookupKeyName: string,
   columnSelector: string
 ) => {
-  return `const ${loaderName} = new DataLoader((ids) => {
+  return `const ${loaderName} = new DataLoader<any, any>((ids) => {
   return getByIdsUsingJoiningTable(connection, '${joiningTableName}', '${targetResourceTableName}', '${joiningKeyName}', '${lookupKeyName}', '${columnSelector}', ids);
 }, dataLoaderConfigurationMap.${loaderName});`;
 };
@@ -248,9 +248,7 @@ export default (unnormalisedColumns: $ReadOnlyArray<ColumnType>, indexes: $ReadO
     return a.localeCompare(b);
   });
 
-  return `// @flow
-
-import {
+  return `import {
   getByIds,
   getByIdsUsingJoiningTable
 } from 'postloader';
@@ -260,16 +258,19 @@ import type {
 } from 'slonik';
 ${generateFlowTypeDocument(columns, dataTypeMap)}
 
-export type LoadersType = {|
+export type LoadersType = {
 ${loaderTypes
     .map((body) => {
       return indent(body, 2);
     })
     .sort()
     .join(',\n')}
-|};
+};
 
-export const createLoaders = (connection: DatabaseConnectionType, dataLoaderConfigurationMap: Object = {}): LoadersType => {
+export const createLoaders = (
+  connection: DatabaseConnectionType,
+  dataLoaderConfigurationMap: { [key: string]: any } = {}
+): LoadersType => {
 ${loaders
     .map((body) => {
       return indent(body, 2);

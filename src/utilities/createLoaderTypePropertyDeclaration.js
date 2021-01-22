@@ -28,8 +28,8 @@ export default (loaderName: string, dataTypeName: string, resourceName: string, 
   }
 
   if (resultIsArray) {
-    return '+' + loaderName + ': DataLoader<' + keyType + ', $ReadOnlyArray<' + formatTypeName(resourceName) + '>>';
+    return 'readonly ' + loaderName + ': DataLoader<' + keyType + ', ReadonlyArray<' + formatTypeName(resourceName) + '>>';
   } else {
-    return '+' + loaderName + ': DataLoader<' + keyType + ', ' + formatTypeName(resourceName) + '>';
+    return 'readonly ' + loaderName + ': DataLoader<' + keyType + ', ' + formatTypeName(resourceName) + '>';
   }
 };
